@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Belagavi City Police Bookmarks</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 0; }
+    header { background: #003366; color: white; padding: 20px; text-align: center; }
+    section { padding: 20px; margin-bottom: 40px; background: white; box-shadow: 0 0 10px rgba(0,0,0,0.05); }
+    h2 { color: #003366; }
+    .bookmark-form input[type="text"], .bookmark-form input[type="url"] {
+      padding: 6px; width: 180px; margin: 5px;
+    }
+    .bookmark-form input[type="submit"] {
+      padding: 6px 16px; background: #003366; color: white; border: none; cursor: pointer;
+    }
+    .bookmark-form input[type="submit"]:hover { background: #0055aa; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { padding: 8px; border: 1px solid #ccc; text-align: center; }
+    th { background: #0055aa; color: white; }
+    .bookmark-name { display: flex; align-items: center; gap: 10px; justify-content: center; }
+    .bookmark-name img { width: 20px; height: 20px; }
+    .delete-btn {
+      background: #cc0000; color: white; border: none; padding: 5px 10px;
+      cursor: pointer; border-radius: 4px;
+    }
+    .delete-btn:hover { background: #a00000; }
+    .open-btn {
+      background: #0073e6; color: white; padding: 8px 16px;
+      border: none; border-radius: 4px; cursor: pointer; margin-top: 10px;
+    }
+    .open-btn:hover { background: #005bb5; }
+    .link-list a { display: block; margin: 2px 0; color: #003366; text-decoration: none; }
+    .link-list a:hover { text-decoration: underline; }
+    .category-title {
+      font-size: 24px;
+      margin-bottom: 10px;
+      border-bottom: 2px solid #003366;
+      padding-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Belgaum City Police Bookmarks</h1>
+  <p>Categorized Bookmark Manager</p>
+</header>
+
+<div id="sections"></div>
+
+<footer style="text-align:center; background:#003366; color:white; padding:15px;">
+  &copy; Santosh Hosamani
+</footer>
+
+<script>
+  const categories = ["Kannada", "Marathi", "Hindu", "Muslim", "Others"];
+
+  function createSection(category) {
+    const section = document.createElement("section");
+    section.innerHTML = `
+      <div class="category-title">🔖 ${category} Section</div>
+
+      <form class="bookmark-form" onsubmit="addBookmark(event, '${category}')">
+        <input type="text" placeholder="Name" required>
+        <input type="url" placeholder="Website URL" required>
+        <input type="submit" value="Add Bookmark">
+      </form>
+
+      <button class="open-btn" onclick="openSelectedLinks('${category}')">🔗 Open Selected</button>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Select</th>
+            <th>Title</th>
+            <th>Link</th>
+            <th>Delete</th>
+          </tr>
+        </thead>
+        <tbody id="${category}-table-body"></tbody>
+      </table>
+    `;
+    return section;
+  }
+
+  function renderSections() {
+    const container = document.getElementById("sections");
+    categories.forEach(category => {
+      const sec = createSection(category);
+      container.appendChild(sec);
+      loadBookmarks(category);
+    });
+  }
+
+  function getFavicon(url) {
+    return "https://www.google.com/s2/favicons?sz=64&domain_url=" + encodeURIComponent(url);
+  }
+
+  function addBookmark(event, category) {
+    event.preventDefault();
+    const form = event.target;
+    const inputs = form.querySelectorAll("input");
+    const name = inputs[0].value.trim();
+    const mainURL = inputs[1].value.trim();
+
+    if (!mainURL.startsWith("http")) {
+      alert("Website must start with http or https");
+      return;
+    }
+
+    const bookmark = { name, mainURL };
+    const key = `bookmarks-${category}`;
+    const bookmarks = JSON.parse(localStorage.getItem(key)) || [];
+    bookmarks.push(bookmark);
+    localStorage.setItem(key, JSON.stringify(bookmarks));
+    form.reset();
+    loadBookmarks(category);
+  }
+
+  function loadBookmarks(category) {
+    const key = `bookmarks-${category}`;
+    const bookmarks = JSON.parse(localStorage.getItem(key)) || [];
+    const tbody = document.getElementById(`${category}-table-body`);
+    tbody.innerHTML = "";
+
+    bookmarks.forEach((bm, index) => {
+      const favicon = getFavicon(bm.mainURL);
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td><input type="checkbox" class="select-box" data-category="${category}" data-index="${index}"></td>
+        <td class="bookmark-name"><img src="${favicon}" alt="logo"> ${bm.name}</td>
+        <td><a href="${bm.mainURL}" target="_blank">${bm.mainURL}</a></td>
+        <td><button class="delete-btn" onclick="deleteBookmark('${category}', ${index})">Delete</button></td>
+      `;
+      tbody.appendChild(row);
+    });
+  }
+
+  function deleteBookmark(category, index) {
+    const key = `bookmarks-${category}`;
+    const bookmarks = JSON.parse(localStorage.getItem(key)) || [];
+    bookmarks.splice(index, 1);
+    localStorage.setItem(key, JSON.stringify(bookmarks));
+    loadBookmarks(category);
+  }
+
+  function openSelectedLinks(category) {
+    const checkboxes = document.querySelectorAll(`.select-box[data-category="${category}"]:checked`);
+    const key = `bookmarks-${category}`;
+    const bookmarks = JSON.parse(localStorage.getItem(key)) || [];
+
+    checkboxes.forEach(box => {
+      const index = box.dataset.index;
+      const bm = bookmarks[index];
+      if (bm.mainURL) window.open(bm.mainURL, "_blank");
+    });
+  }
+
+  window.onload = renderSections;
+</script>
+
+</body>
+</html>
